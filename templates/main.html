@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section id="catalog" class="section-p1">
+    <h2>Наші пропозиції</h2>
+    <div class="pro-container">
+        {% for equipment in equipments %}
+        <div class="pro">
+            <img src="../static/img/{{ equipment[1] }}.jpg" alt="">
+            <div class="des">
+                <h3>{{ equipment[1] }}</h3>
+                <h5>{{ equipment[2] }}грн/год</h5>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section id="banner">
+    <h2>Про нас</h2>
+    <h4>Наша компанія - лідер у сфері оренди будівельної техніки з вбудованими розумними датчиками. Ми поєднуємо
+        передові технології з великим досвідом у будівельній галузі, надаючи клієнтам не лише доступ до найсучасніших
+        засобів будівництва, але й можливість моніторингу та аналізу використання цієї техніки у режимі реального часу.
+    </h4>
+    <button class="normal">Дізнатись більше</button>
+</section>
+
+<section id="feedback" class="section-p1">
+    <div class="question">
+        <h3>Є питання?</h3>
+        <h5>Залиште свою пошту і ми зв'яжемося з Вами!</h5>
+    </div>
+    <form method="post" action="/" class="form">
+        <input type="text" name="email" placeholder="Ваш e-mail">
+        <button type="submit" class="normal">Надіслати</button>
+    </form>
+</section>
+
+<footer class="section-p1">
+    <div class="col">
+        <img src="../static/img/construction.png" class="logo" alt="logo">
+        <h4>Контакти</h4>
+        <p><strong>Адреса: </strong>Україна, 03056, м.Київ, Берестейський проспект, 37</p>
+        <p><strong>Телефон: </strong>(044) 392-92-25</p>
+        <p><strong>Години роботи: </strong>8:00 - 18:00, Пн - Пт</p>
+    </div>
+</footer>
+{% endblock content %}

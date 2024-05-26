@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Розумне будівництво</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div>
+        <section id="header">
+            <a href="/"><img src="../static/img/construction.png" class="logo" alt="logo"></a>
+            <div>
+                <ul  id="navbar">
+                    <li><a href="/">Головна</a></li>
+                    <li><a href="/analytics">Аналітика</a></li>
+                    <li><a href="/requests">Запити</a></li>
+                    <li><a href="/form">Залишити заявку</a></li>
+                </ul>
+            </div>
+        </section>
+    
+        {% block content %} {% endblock %}
+    
+        
+    </div>
+    <!-- <script src="script.js"></script> -->
+</body>
+</html>

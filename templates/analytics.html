@@ -1,0 +1,255 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="wrapper">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>Обладнання</h3>
+        </div>
+        <ul id="equipment-list">
+            {% for name in equipment_list %}
+            <li>
+                <a href="#" data-equipment-name="{{ name[0] }}">{{ name[0] }} <span
+                        id="viewDangerHistory_{{ name[0] }}"><img src="../static/img/eye.png" alt=""></span><span
+                        id="getDangerHistory_{{ name[0] }}"><img src="../static/img/download.png" alt=""></span></a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="graph-container section-p1"></div>
+    <div class="popup-container" id="popupContainer"></div>
+
+</div>
+
+<script>
+
+    let currentEquipmentName = '';
+    let currentEquipment = null;
+    let currentAlertDiv;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const equipmentList = document.getElementById("equipment-list");
+        equipmentList.querySelectorAll("a").forEach(function (link) {
+            link.addEventListener("click", function (event) {
+                event.preventDefault();
+                if (currentEquipment !== null) {
+                    currentEquipment.classList.remove("selected");
+                }
+                link.classList.add("selected");
+                currentEquipment = link;
+                const equipmentName = link.dataset.equipmentName;
+                currentEquipmentName = equipmentName;
+                updateGraphs();
+            });
+        });
+    });
+
+    function loadDangerHistory() {
+        fetch(`/get_danger_history?equipment_name=${currentEquipmentName}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `danger_history_${currentEquipmentName}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const equipmentList = document.getElementById("equipment-list");
+        equipmentList.querySelectorAll("a").forEach(function (link) {
+            const equipmentName = link.dataset.equipmentName;
+            const getDangerHistoryButton = document.getElementById(`getDangerHistory_${equipmentName}`);
+            getDangerHistoryButton.addEventListener('click', loadDangerHistory);
+        });
+    });
+
+    function showModal(titleHtml, contentHtml) {
+        const modal = document.createElement("div");
+        modal.classList.add("modal");
+        modal.innerHTML = `
+            <div class="modal_inner">
+                <div class="modal_top">
+                    <div class="modal_title">${titleHtml}</div>
+                    <button class="modal_close" type="button">
+                        <span>Закрити</span>
+                    </button>
+                </div>
+                <div class="modal_content">${contentHtml}</div>
+            </div>
+        `;
+
+        modal.querySelector(".modal_close").addEventListener("click", () => {
+            document.body.removeChild(modal);
+        });
+
+        document.body.appendChild(modal);
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const equipmentList = document.getElementById("equipment-list");
+        equipmentList.querySelectorAll("a").forEach(function (link) {
+            const equipmentNameView = link.dataset.equipmentName;
+            const viewDangerHistoryButton = document.getElementById(`viewDangerHistory_${equipmentNameView}`);
+            viewDangerHistoryButton.addEventListener("click", function () {
+                fetch(`/view_danger_history?equipment_name=${equipmentNameView}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Формування таблиці з даними
+                        let tableHtml = '<table>';
+                        tableHtml += '<tr><th>Датчик</th><th>Значення</th><th>Дата та час</th></tr>';
+                        data.forEach(item => {
+                            tableHtml += `<tr><td>${item[1]}</td><td>${item[2]}</td><td>${item[3]}</td></tr>`;
+                        });
+                        tableHtml += '</table>';
+                        showModal(`Дані з ${equipmentNameView}`, tableHtml);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            });
+        });
+    });
+
+
+    let change;
+    let categoryContainers = {};
+
+    function updateGraphs() {
+        const url = `/get_data_from_db?equipment_name=${currentEquipmentName}`;
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const count = data['count'];
+                const graphContainer = document.querySelector(".graph-container");
+
+                // Якщо обладнання змінилося, очистити контейнер
+                if (currentEquipmentName !== change) {
+                    graphContainer.innerHTML = "";
+                    categoryContainers = {};
+                    change = currentEquipmentName;
+                }
+
+                for (let i = 1; i <= count; i++) {
+                    const sensorData = data[`data${i}`][data[`data${i}`].length - 1];
+                    const sensorName = sensorData.sensor;
+                    const minValue = sensorData.min_value;
+                    const maxValue = sensorData.max_value;
+                    const category_id = sensorData.category_id;
+                    const category_name = sensorData.category_name;
+
+                    if (!categoryContainers[category_id]) {
+                        // Якщо контейнер для цієї категорії ще не створений, створюємо його
+                        const categoryContainer = document.createElement("div");
+                        categoryContainer.classList.add("category-container");
+                        const categoryTitle = document.createElement("h2");
+                        categoryTitle.classList.add("category-title");
+                        categoryTitle.textContent = category_name;
+                        categoryContainer.appendChild(categoryTitle);
+                        graphContainer.appendChild(categoryContainer);
+                        categoryContainers[category_id] = categoryContainer;
+                    }
+
+                    // Створення контейнера для графіка з відповідним id
+                    const graphId = `graph${i}`;
+                    if (!document.getElementById(graphId)) { // Перевірка, чи ідентифікатор вже існує на сторінці
+                        const graphDiv = document.createElement("div");
+                        graphDiv.id = graphId;
+                        graphDiv.classList.add("graph");
+                        categoryContainers[category_id].appendChild(graphDiv);
+                    }
+
+                    // Створення графіка
+                    plotGraph(data[`data${i}`], graphId, minValue, maxValue);
+                }
+            });
+    }
+
+
+
+    function checkData(data, sensorName, minValue, maxValue) {
+        // Перевірка останнього запису даних для датчика на відповідність діапазону
+        if (data.value < minValue || data.value > maxValue) {
+            // Відправлення повідомлення про небезпечну ситуацію на сайт
+            const alertMessage = `Небезпечна ситуація! Датчик "${sensorName}" показує недопустиме значення: ${data.value}`;
+            // displayAlert(alertMessage);
+        }
+    }
+
+
+    function displayAlert(message) {
+        const popupContainer = document.getElementById("popupContainer");
+
+        const popup = document.createElement("div");
+        popup.className = "popup";
+        popup.innerText = message;
+        popupContainer.appendChild(popup);
+
+        // Встановлюємо таймер для автоматичного видалення повідомлення через 3 секунди
+        setTimeout(() => {
+            popup.parentNode.removeChild(popup);
+        }, 2000);
+    }
+
+
+    function plotGraph(data, graphId, minValue, maxValue) {
+
+        // Обрізаємо дані, якщо їх кількість більша за 100
+        if (data.length > 100) {
+            data = data.slice(-100);
+        }
+
+        let xData = data.map(entry => entry.timestamp);
+        let yData = data.map(entry => entry.value);
+        let sensor = data.length > 0 ? data[0].sensor : '';
+
+        let graph = document.getElementById(graphId);
+        let layout = {
+            title: sensor,
+            xaxis: { title: 'Час' },
+            yaxis: { title: 'Значення' }
+        };
+        let trace = {
+            x: xData,
+            y: yData,
+            mode: 'lines',
+            type: 'scatter'
+        };
+
+        // Отримуємо індекси елементів, які задовольняють умову
+        let invalidIndices = [];
+        for (let i = 0; i < yData.length; i++) {
+            if (yData[i] < minValue || yData[i] > maxValue) {
+                invalidIndices.push(i);
+            }
+        }
+
+        // Створюємо окремий trace для виділення неправильних значень червоним кольором
+        let invalidTrace = {
+            x: invalidIndices.map(i => xData[i]),
+            y: invalidIndices.map(i => yData[i]),
+            mode: 'markers',
+            marker: { color: 'red' },
+            type: 'scatter'
+        };
+        Plotly.react(graph, [trace, invalidTrace], layout);
+    }
+
+    setInterval(updateGraphs, 1000); // Update every second
+
+</script>
+{% endblock content %}

@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div id="mails" class="section-p1">
+    <h1>Повідомлення від клієнтів</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Електронна адреса</th>
+                <th>Обладнання</th>
+                <th>Кількість</th>
+                <th>Кількість годин</th>
+                <th>Початок оренди</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in requests %}
+            <tr>
+                <td><a href="mailto:{{ request.email }}">{{ request[1] }}</a></td>
+                <td>{{ request[2] if request[2] else 'Уточнити' }}</td>
+                <td>{{ request[3] if request[3] else 'Уточнити' }}</td>
+                <td>{{ request[4] if request[4] else 'Уточнити' }}</td>
+                <td>{{ request[5] if request[5] else 'Уточнити' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock content %}
+

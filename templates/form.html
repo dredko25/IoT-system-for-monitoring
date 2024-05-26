@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h1 id="form_page_header">Форма замовлення обладнання</h1>
+<form id="orderForm" action="/submit_order" method="post">
+    <div id="form_item_1" class="form-item">
+        <label for="equipment">Обладнання:</label>
+        <select id="equipment_1" name="equipment">
+            {% for equipment in equipments %}
+            <option value="{{ equipment[1] }}">{{ equipment[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <input type="number" name="quantity" min="1" placeholder="Кількість" required>
+        <input type="number"name="usageHours" min="1" placeholder="Кількість годин" required>
+        <label for="startDate">Початок оренди:</label>
+        <input type="date" name="startDate" required>
+        <input type="email" name="email" placeholder="Е-мейл" required>
+        <button type="button" class="remove-button" style="display: none;">Видалити</button>
+    </div>
+    <button id="addFields" type="button">Додати інше обладнання</button>
+    <button type="submit">Відправити замовлення</button>
+</form>
+
+
+<script>
+    document.getElementById('addFields').addEventListener('click', function () {
+        const form = document.getElementById('orderForm');
+        const clone = form.querySelector('#form_item_1').cloneNode(true);
+        let id = form.querySelectorAll('.form-item').length + 1;
+        clone.id = `form_item_${id}`;
+        clone.querySelector('.remove-button').style.display = 'inline-block';
+        form.insertBefore(clone, form.querySelector('#addFields'));
+    });
+
+    document.addEventListener('click', function (event) {
+        if (event.target.classList.contains('remove-button')) {
+            const id = event.target.id.split('_')[1];
+            document.getElementById(`form_item_${id}`).remove();
+        }
+    });
+</script>
+
+{% endblock content %}
